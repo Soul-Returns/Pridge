@@ -3,6 +3,7 @@ package io.github.ricciow.util
 import io.github.notenoughupdates.moulconfig.Config
 import io.github.notenoughupdates.moulconfig.managed.ManagedConfig
 import io.github.ricciow.Pridge.mc
+import net.minecraft.client.MinecraftClient
 import net.minecraft.client.network.ClientPlayerEntity
 import net.minecraft.text.MutableText
 import net.minecraft.text.Style
@@ -22,7 +23,8 @@ fun ClientPlayerEntity?.chatHypixel(type: ChatType, message: String?) {
 }
 
 fun ClientPlayerEntity?.sendCommand(command: String): Boolean {
-    return this?.networkHandler?.sendCommand(command.substring(1)) ?: false
+    return false
+//    return this?.networkHandler?.sendChatCommand(command.substring(1)) ?: false
 }
 
 fun ClientPlayerEntity?.sendMessage(message: String) {

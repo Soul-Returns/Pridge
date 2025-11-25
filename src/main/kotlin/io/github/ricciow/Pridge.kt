@@ -15,8 +15,7 @@ import kotlinx.io.IOException
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
-import net.fabricmc.fabric.api.client.rendering.v1.HudLayerRegistrationCallback
-import net.fabricmc.fabric.api.client.rendering.v1.IdentifiedLayer
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 import net.fabricmc.loader.api.FabricLoader
 import net.minecraft.client.MinecraftClient
 import net.minecraft.util.Identifier
@@ -55,8 +54,9 @@ object Pridge : ClientModInitializer {
         val imagePreviewLayer = Identifier.of("image-preview-mod", "preview-layer")
         val imagePreviewRenderer = ImagePreviewRenderer()
 
-        HudLayerRegistrationCallback.EVENT.register { layeredDrawer ->
-            layeredDrawer.attachLayerAfter(IdentifiedLayer.CHAT, imagePreviewLayer, imagePreviewRenderer::onHudRender)
+        @Suppress("DEPRECATION")
+        HudRenderCallback.EVENT.register { context, tickCounter ->
+            imagePreviewRenderer.onHudRender(context, tickCounter)
         }
 
         PridgeLogger.info("Initialized successfully!")

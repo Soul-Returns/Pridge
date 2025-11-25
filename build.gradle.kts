@@ -2,8 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     java
-    kotlin("jvm")
-    id("fabric-loom")
+    id("fabric-loom") version "1.10-SNAPSHOT"
+    id("org.jetbrains.kotlin.jvm") version "2.2.0"
+    id("dev.kikugie.stonecutter") version "0.7.11"
 }
 
 group = property("maven_group")!!
@@ -48,6 +49,7 @@ dependencies {
     }
 
     modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_main_api_version")}")
 
     modImplementation("org.notenoughupdates.moulconfig:${property("moulconfig_version")}")
 
