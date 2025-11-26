@@ -84,8 +84,10 @@ object SpecialFunctions {
         if (CONFIG_I.linkCategory.enabled) {
             var representation = CONFIG_I.linkCategory.representation
             val group = matcher.group(1)
+            // Remove the "l$" prefix before decoding
+            val encodedUrl = group.removePrefix("l$")
             val url = try {
-                UrlFormatter.decode(group)
+                UrlFormatter.decode(encodedUrl)
             } catch (e: Exception) {
                 PridgeLogger.error("Failed to decode URL: $group", e)
                 representation = "&a&l[Failed to decode URL]"
