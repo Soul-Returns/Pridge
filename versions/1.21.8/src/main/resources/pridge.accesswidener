@@ -1,8 +1,0 @@
-accessWidener v2 named
-
-accessible field net/minecraft/client/gui/hud/ChatHud visibleMessages Ljava/util/List;
-accessible field net/minecraft/client/gui/hud/ChatHud messages Ljava/util/List;
-accessible field net/minecraft/client/gui/hud/ChatHud scrolledLines I
-
-accessible method net/minecraft/client/gui/hud/ChatHud refresh ()V
-accessible method net/minecraft/client/gui/hud/ChatHud logChatMessage (Lnet/minecraft/client/gui/hud/ChatHudLine;)V

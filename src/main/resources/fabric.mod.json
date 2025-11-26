@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "id": "pridge",
-  "name": "pridge",
+  "id": "${id}",
+  "name": "${name}",
   "version": "${version}",
-  "description": "This is a formatted for the Shrimple/PrawnAcademy Guild Bridge bot",
+  "description": "This is a formatter for the Shrimple/PrawnAcademy Guild Bridge bot",
   "authors": [
     "Riccio",
     "Ilmars112",
@@ -31,8 +31,7 @@
   "accessWidener": "pridge.accesswidener",
   "depends": {
     "fabricloader": ">=0.16.14",
-    "minecraft": ">=1.21.5 <=1.21.10",
-    "fabric-api": ">=0.128.1",
+    "minecraft": "${minecraft}",
     "fabric-language-kotlin": "*"
   }
 }

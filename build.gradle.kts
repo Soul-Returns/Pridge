@@ -1,5 +1,3 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     java
     id("fabric-loom") version "1.13-SNAPSHOT"
@@ -7,11 +5,14 @@ plugins {
     id("dev.kikugie.stonecutter") version "0.7.11"
 }
 
-group = property("maven_group")!!
-version = property("mod_version")!!
+version = "${property("mod.version")}+${stonecutter.current.version}"
+base.archivesName = property("archives_base_name") as String
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-kotlin.compilerOptions.jvmTarget.set(JvmTarget.JVM_21)
+
+val requiredJava = when {
+    stonecutter.eval(stonecutter.current.version, ">=1.21.5") -> JavaVersion.VERSION_21
+    else -> JavaVersion.VERSION_1_8
+}
 
 repositories {
     maven("https://maven.notenoughupdates.org/releases/") {
@@ -23,8 +24,48 @@ repositories {
     }
 }
 
+afterEvaluate {
+    // Remove the -dev classifier from the jar
+    tasks.named<Jar>("jar") {
+        archiveClassifier.set("")
+    }
+}
+
+dependencies {
+    // Extra fabric api modules
+    val apiModules = setOf(
+        "fabric-resource-loader-v0",
+        "fabric-lifecycle-events-v1",
+        "fabric-events-interaction-v0",
+        "fabric-command-api-v2",
+        "fabric-registry-sync-v0",
+        "fabric-rendering-v1",
+        "fabric-message-api-v1"
+    )
+
+    minecraft("com.mojang:minecraft:${property("minecraft_version")}")
+    mappings("net.fabricmc:yarn:${property("yarn_mappings")}:v2")
+
+    modImplementation("net.fabricmc:fabric-loader:${property("loader_version")}")
+
+    apiModules.forEach {
+        modImplementation(fabricApi.module(it, property("fabric_api") as String))
+    }
+
+    modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
+
+    modImplementation("org.notenoughupdates.moulconfig:${property("moulconfig_version")}")
+
+    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:${property("devauth_version")}")
+}
+
 loom {
-    accessWidenerPath.set(file("src/main/resources/pridge.accesswidener"))
+    fabricModJsonPath = rootProject.file("src/main/resources/fabric.mod.json") // Useful for interface injection
+    accessWidenerPath = rootProject.file("src/main/resources/pridge.accesswidener")
+
+    decompilerOptions.named("vineflower") {
+        options.put("mark-corresponding-synthetics", "1") // Adds names to lambdas - useful for mixins
+    }
 
     runConfigs.all {
         ideConfigGenerated(true)
@@ -33,55 +74,37 @@ loom {
     }
 }
 
-// Fix for multiple versions using same Minecraft version
-abstract class LockService : BuildService<BuildServiceParameters.None>
-
-val genSourcesLock = gradle.sharedServices.registerIfAbsent("genSourcesLock", LockService::class) {
-    maxParallelUsages.set(1) // Only allow one genSources task to run at a time
-}
-
-afterEvaluate {
-    tasks.withType<net.fabricmc.loom.task.GenerateSourcesTask>().configureEach {
-        // Disable parallel execution to prevent conflicts when multiple versions share the same Minecraft version
-        // This is necessary because loom uses the same cache location for the same MC version
-        usesService(genSourcesLock)
-
-        // Also add explicit task ordering to satisfy Gradle's validation
-        val currentTaskPath = this.path
-        val currentTask = this
-        rootProject.subprojects.forEach { subproject ->
-            if (subproject != project) {
-                subproject.tasks.withType<net.fabricmc.loom.task.GenerateSourcesTask>().configureEach {
-                    if (this.path < currentTaskPath) {
-                        currentTask.mustRunAfter(this)
-                    }
-                }
-            }
-        }
-    }
-}
-
-dependencies {
-    minecraft("com.mojang:minecraft:${property("minecraft_version")}")
-    mappings("net.fabricmc:yarn:${property("yarn_mappings")}:v2")
-
-    modImplementation("net.fabricmc:fabric-loader:${property("loader_version")}")
-
-    modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
-
-    modImplementation("org.notenoughupdates.moulconfig:${property("moulconfig_version")}")
-
-    modRuntimeOnly("me.djtheredstoner:DevAuth-fabric:${property("devauth_version")}")
+java {
+    withSourcesJar()
+    targetCompatibility = requiredJava
+    sourceCompatibility = requiredJava
 }
 
 tasks {
     processResources {
-        inputs.property("version", project.version)
+        inputs.property("id", project.property("mod.id"))
+        inputs.property("name", project.property("mod.name"))
+        inputs.property("version", project.property("mod.version"))
+        inputs.property("minecraft", project.property("mod.mc_dep"))
 
-        filesMatching("fabric.mod.json") {
-            expand(getProperties())
-            expand(mutableMapOf("version" to project.version))
-        }
+        val props = mapOf(
+            "id" to project.property("mod.id"),
+            "name" to project.property("mod.name"),
+            "version" to project.property("mod.version"),
+            "minecraft" to project.property("mod.mc_dep")
+        )
+
+        filesMatching("fabric.mod.json") { expand(props) }
+
+        val mixinJava = "JAVA_${requiredJava.majorVersion}"
+        filesMatching("*.mixins.json") { expand("java" to mixinJava) }
+    }
+
+    // Builds the version into a shared folder in `build/libs/${mod version}/`
+    register<Copy>("buildAndCollect") {
+        group = "build"
+        from(remapJar.map { it.archiveFile }, remapSourcesJar.map { it.archiveFile })
+        into(rootProject.layout.buildDirectory.file("libs/${project.property("mod.version")}"))
+        dependsOn("build")
     }
 }

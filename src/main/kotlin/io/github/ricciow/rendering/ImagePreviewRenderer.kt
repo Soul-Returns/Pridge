@@ -2,9 +2,11 @@ package io.github.ricciow.rendering
 
 import io.github.ricciow.Pridge.mc
 import io.github.ricciow.util.PridgeLogger
+//? if = 1.21.8 || 1.21.10
 import net.minecraft.client.gl.RenderPipelines
 import net.minecraft.client.gui.DrawContext
-import net.minecraft.client.render.RenderLayer
+//? if = 1.21.5
+/*import net.minecraft.client.render.RenderLayer*/
 import net.minecraft.client.render.RenderTickCounter
 import net.minecraft.client.texture.NativeImage
 import net.minecraft.client.texture.NativeImageBackedTexture
@@ -168,7 +170,10 @@ class ImagePreviewRenderer {
         val aspectRatio = imageWidth.toFloat() / imageHeight
         var desiredWidth = screenWidth * 0.5f
 
-        val handle = mc.window.handle
+        //? if = 1.21.5 || 1.21.8
+        /*val handle = mc.window.handle*/
+        //? if = 1.21.10
+        val handle = mc.window
         if (InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_SHIFT) &&
             InputUtil.isKeyPressed(handle, GLFW.GLFW_KEY_LEFT_CONTROL)
         ) {
@@ -192,12 +197,10 @@ class ImagePreviewRenderer {
         val intWidth = finalWidth.toInt()
         val intHeight = finalHeight.toInt()
         drawContext.drawTexture(
-            //? if =1.21.5
+            //? if = 1.21.5
             /*RenderLayer::getGuiTextured,*/
-            //? if =1.21.8
-            /*RenderPipelines.GUI_TEXTURED,*/
-            //? if =1.21.10
-            //?
+            //? if = 1.21.8 || 1.21.10
+            RenderPipelines.GUI_TEXTURED,
             PREVIEW_TEXTURE_ID,
             0, 0,
             0.0f, 0.0f,
