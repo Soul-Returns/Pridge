@@ -192,7 +192,12 @@ class ImagePreviewRenderer {
         val intWidth = finalWidth.toInt()
         val intHeight = finalHeight.toInt()
         drawContext.drawTexture(
-            RenderPipelines.GUI_TEXTURED,
+            //? if =1.21.5
+            /*RenderLayer::getGuiTextured,*/
+            //? if =1.21.8
+            /*RenderPipelines.GUI_TEXTURED,*/
+            //? if =1.21.10
+            //?
             PREVIEW_TEXTURE_ID,
             0, 0,
             0.0f, 0.0f,
