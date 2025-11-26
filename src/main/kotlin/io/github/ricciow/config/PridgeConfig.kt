@@ -3,11 +3,12 @@ package io.github.ricciow.config
 import com.google.gson.annotations.Expose
 import io.github.notenoughupdates.moulconfig.Config
 import io.github.notenoughupdates.moulconfig.annotations.Category
+import io.github.notenoughupdates.moulconfig.common.text.StructuredText
 import io.github.ricciow.config.categories.*
 
 class PridgeConfig : Config() {
-    override fun getTitle(): String {
-        return "Pridge"
+    override fun getTitle(): StructuredText {
+        return StructuredText.of("Pridge")
     }
 
     override fun isValidRunnable(runnableId: Int): Boolean {

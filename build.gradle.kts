@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     java
-    id("fabric-loom") version "1.10-SNAPSHOT"
+    id("fabric-loom") version "1.13-SNAPSHOT"
     id("org.jetbrains.kotlin.jvm") version "2.2.0"
     id("dev.kikugie.stonecutter") version "0.7.11"
 }
@@ -25,6 +25,40 @@ repositories {
 
 loom {
     accessWidenerPath.set(file("src/main/resources/pridge.accesswidener"))
+
+    runConfigs.all {
+        ideConfigGenerated(true)
+        vmArgs("-Dmixin.debug.export=true") // Exports transformed classes for debugging
+        runDir = "../../run" // Shares the run directory between versions
+    }
+}
+
+// Fix for multiple versions using same Minecraft version
+abstract class LockService : BuildService<BuildServiceParameters.None>
+
+val genSourcesLock = gradle.sharedServices.registerIfAbsent("genSourcesLock", LockService::class) {
+    maxParallelUsages.set(1) // Only allow one genSources task to run at a time
+}
+
+afterEvaluate {
+    tasks.withType<net.fabricmc.loom.task.GenerateSourcesTask>().configureEach {
+        // Disable parallel execution to prevent conflicts when multiple versions share the same Minecraft version
+        // This is necessary because loom uses the same cache location for the same MC version
+        usesService(genSourcesLock)
+
+        // Also add explicit task ordering to satisfy Gradle's validation
+        val currentTaskPath = this.path
+        val currentTask = this
+        rootProject.subprojects.forEach { subproject ->
+            if (subproject != project) {
+                subproject.tasks.withType<net.fabricmc.loom.task.GenerateSourcesTask>().configureEach {
+                    if (this.path < currentTaskPath) {
+                        currentTask.mustRunAfter(this)
+                    }
+                }
+            }
+        }
+    }
 }
 
 dependencies {
@@ -33,23 +67,8 @@ dependencies {
 
     modImplementation("net.fabricmc:fabric-loader:${property("loader_version")}")
 
-    // Extra fabric api modules
-    val apiModules = setOf(
-        "fabric-resource-loader-v0",
-        "fabric-lifecycle-events-v1",
-        "fabric-events-interaction-v0",
-        "fabric-command-api-v2",
-        "fabric-registry-sync-v0",
-        "fabric-rendering-v1",
-        "fabric-message-api-v1"
-    )
-
-    apiModules.forEach {
-        modImplementation(fabricApi.module(it, property("fapi_version").toString()))
-    }
-
     modImplementation("net.fabricmc:fabric-language-kotlin:${property("fabric_kotlin_version")}")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_main_api_version")}")
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${property("fabric_version")}")
 
     modImplementation("org.notenoughupdates.moulconfig:${property("moulconfig_version")}")
 
